@@ -1,0 +1,62 @@
+name: pysa
+
+on:
+  push:
+    branches: [ master, action-test ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  pysa:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          sudo apt-get install ocaml
+          sudo apt-get install ocaml-dune
+             
+      - name: Setup OCaml
+        uses: avsm/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.10.2
+
+      - name: Setup opam switch
+        run: |
+          opam switch create 4.10.2
+          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.10.2" >> $GITHUB_ENV
+          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.10.2/lib/stublibs:$HOME/.opam/4.10.2/lib/ocaml/stublibs:$HOME/.opam/4.10.2/lib/ocam" >> $GITHUB_ENV
+          echo "OCAML_TOPLEVEL_PATH=$HOME/.opam/4.10.2/lib/toplevel"
+          echo "MANPATH=$HOME/.opam/4.10.2/man"
+          echo "$HOME/.opam/4.10.2/bin" >> $GITHUB_PATH
+          echo "/home/opam/.opam/4.10.2/bin" >> $GITHUB_PATH
+
+      - name: Build Pyre (and Pysa)
+        run: |
+          unzip -qq ./stubs/typeshed/typeshed.zip -d ./stubs/typeshed/
+          ./scripts/setup.sh --local --no-tests
+          cd ./source
+          make
+          cd ../
+          sudo echo 'python -m $GITHUB_WORKSPACE/client.pyre "$@"' >> $GITHUB_WORKSPACE/documentation/deliberately_vulnerable_flask_app
+
+          sudo chmod +x $GITHUB_WORKSPACE/documentation/deliberately_vulnerable_flask_app
+          sudo echo 'python -m $GITHUB_WORKSPACE/client.pyre "$@"' >> $GITHUB_WORKSPACE/scripts/pyre
+          sudo chmod +x $GITHUB_WORKSPACE/scripts/pyre
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$PYTHONPATH" >> $GITHUB_ENV
+          echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
+          echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/stubs/typeshed/typeshed-master/" >> $GITHUB_ENV
+          cat $GITHUB_WORKSPACE/scripts/pyre
+
+      - name: Run and test pysa output
+        run: |
+          cd ./documentation/deliberately_vulnerable_flask_app
+          . ./setup.sh
+          python ./run_integration_tests.py
+

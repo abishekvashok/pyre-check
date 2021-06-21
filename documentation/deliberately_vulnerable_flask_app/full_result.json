@@ -1,0 +1,53 @@
+[
+  {
+    "line": 16,
+    "column": 19,
+    "stop_line": 16,
+    "stop_column": 26,
+    "path": "rce.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "long_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "concise_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "inference": null,
+    "define": "rce.definite_rce"
+  },
+  {
+    "line": 21,
+    "column": 19,
+    "stop_line": 21,
+    "stop_column": 36,
+    "path": "rce.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "long_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "concise_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "inference": null,
+    "define": "rce.potential_rce_1"
+  },
+  {
+    "line": 26,
+    "column": 19,
+    "stop_line": 26,
+    "stop_column": 36,
+    "path": "rce.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "long_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "concise_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "inference": null,
+    "define": "rce.potential_rce_2"
+  }
+]
