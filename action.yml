@@ -1,0 +1,36 @@
+name: pysa
+description: "Run pysa on the repository and check for vulnerabilities"
+
+inputs:
+  build-type:
+    description: Pysa build to use. Possible values are stable and nightly. Default is stable.
+    required: false
+    default: "stable"
+
+runs:
+  using: "composite"
+  steps:
+    - run: if [ ${{inputs.build-type}} = "nighty" ]; then pip install pyre-check-nightly; else pip install pyre-check; fi
+      shell: bash
+    - run: if [ ! -f .pyre_configuration ]; then printf ".\n" | pyre init; fi
+      shell: bash
+    - run: pyre infer
+      shell: bash
+    - run: pyre infer -i --annotate-from-existing-stubs
+      shell: bash
+    - run: pip install fb-sapp
+      shell: bash
+    - run: mkdir ./.pysa/
+      shell: bash
+    - run: pyre -n analyze --no-verify --save-results-to ./.pysa/
+      shell: bash
+    - run: ls -la # TODO: Remove after debug
+      shell: bash
+    - run: cd .pysa
+      shell: bash
+    - run: ls
+      shell: bash
+    - run: sapp analyze ./taint-output.json
+      shell: bash
+    - run: sapp filter issues 1 --output-format sarif > sarif.json
+      shell: bash

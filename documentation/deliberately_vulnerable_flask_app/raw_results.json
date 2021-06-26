@@ -1,0 +1,138 @@
+[
+  {
+    "line": 33,
+    "column": 13,
+    "stop_line": 33,
+    "stop_column": 20,
+    "path": "app.py",
+    "code": 5011,
+    "name": "User data to filesystem operation (read/write)",
+    "description":
+      "User data to filesystem operation (read/write) [5011]: Data from [UserControlled] source(s) may reach [FileSystem_ReadWrite] sink(s)",
+    "long_description":
+      "User data to filesystem operation (read/write) [5011]: Data from [UserControlled] source(s) may reach [FileSystem_ReadWrite] sink(s)",
+    "concise_description":
+      "User data to filesystem operation (read/write) [5011]: Data from [UserControlled] source(s) may reach [FileSystem_ReadWrite] sink(s)",
+    "inference": null,
+    "define": "app.definite_pt"
+  },
+  {
+    "line": 18,
+    "column": 19,
+    "stop_line": 18,
+    "stop_column": 26,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "long_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "concise_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "inference": null,
+    "define": "app.definite_rce"
+  },
+  {
+    "line": 48,
+    "column": 16,
+    "stop_line": 48,
+    "stop_column": 62,
+    "path": "app.py",
+    "code": 5005,
+    "name": "SQL injection.",
+    "description":
+      "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL, StringMayBeSQL] sink(s)",
+    "long_description":
+      "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL, StringMayBeSQL] sink(s)",
+    "concise_description":
+      "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL, StringMayBeSQL] sink(s)",
+    "inference": null,
+    "define": "app.definite_sql"
+  },
+  {
+    "line": 53,
+    "column": 17,
+    "stop_line": 53,
+    "stop_column": 24,
+    "path": "app.py",
+    "code": 5012,
+    "name": "Potential Server-side request forgery (SSRF)",
+    "description":
+      "Potential Server-side request forgery (SSRF) [5012]: Data from [UserControlled] source(s) may reach [RequestSend_URI] sink(s)",
+    "long_description":
+      "Potential Server-side request forgery (SSRF) [5012]: Data from [UserControlled] source(s) may reach [RequestSend_URI] sink(s)",
+    "concise_description":
+      "Potential Server-side request forgery (SSRF) [5012]: Data from [UserControlled] source(s) may reach [RequestSend_URI] sink(s)",
+    "inference": null,
+    "define": "app.definite_ssrf"
+  },
+  {
+    "line": 40,
+    "column": 27,
+    "stop_line": 40,
+    "stop_column": 34,
+    "path": "app.py",
+    "code": 5008,
+    "name": "XSS",
+    "description":
+      "XSS [5008]: Data from [UserControlled] source(s) may reach [XSS] sink(s)",
+    "long_description":
+      "XSS [5008]: Data from [UserControlled] source(s) may reach [XSS] sink(s)",
+    "concise_description":
+      "XSS [5008]: Data from [UserControlled] source(s) may reach [XSS] sink(s)",
+    "inference": null,
+    "define": "app.definite_xss"
+  },
+  {
+    "line": 58,
+    "column": 21,
+    "stop_line": 58,
+    "stop_column": 28,
+    "path": "app.py",
+    "code": 5007,
+    "name": "User data to XML Parser.",
+    "description":
+      "User data to XML Parser. [5007]: Data from [UserControlled] source(s) may reach [XMLParser] sink(s)",
+    "long_description":
+      "User data to XML Parser. [5007]: Data from [UserControlled] source(s) may reach [XMLParser] sink(s)",
+    "concise_description":
+      "User data to XML Parser. [5007]: Data from [UserControlled] source(s) may reach [XMLParser] sink(s)",
+    "inference": null,
+    "define": "app.definite_xxe"
+  },
+  {
+    "line": 23,
+    "column": 19,
+    "stop_line": 23,
+    "stop_column": 36,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "long_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "concise_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "inference": null,
+    "define": "app.potential_rce_1"
+  },
+  {
+    "line": 28,
+    "column": 19,
+    "stop_line": 28,
+    "stop_column": 36,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "long_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "concise_description":
+      "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "inference": null,
+    "define": "app.potential_rce_2"
+  }
+]
