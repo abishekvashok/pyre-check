@@ -44,9 +44,9 @@ jobs:
           cd ./source
           make
           cd ../
-          echo '#!/bin/bash\npython -m $GITHUB_WORKSPACE/client.pyre "$@"' >> $GITHUB_WORKSPACE/documentation/deliberately_vulnerable_flask_app/pyre
+          echo '#!/bin/bash\npython -m ${{GITHUB_WORKSPACE}}/client.pyre "$@"' >> $GITHUB_WORKSPACE/documentation/deliberately_vulnerable_flask_app/pyre
           sudo chmod +x $GITHUB_WORKSPACE/documentation/deliberately_vulnerable_flask_app/pyre
-          echo '#!/bin/bash\npython -m $GITHUB_WORKSPACE/client.pyre "$@"' >> $GITHUB_WORKSPACE/scripts/pyre
+          echo '#!/bin/bash\npython -m ${{GITHUB_WORKSPACE}}/client.pyre "$@"' >> $GITHUB_WORKSPACE/scripts/pyre
           sudo chmod +x $GITHUB_WORKSPACE/scripts/pyre
           echo "PYTHONPATH=$GITHUB_WORKSPACE:$PYTHONPATH" >> $GITHUB_ENV
           echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
