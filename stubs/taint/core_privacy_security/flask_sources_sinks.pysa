@@ -35,6 +35,9 @@ werkzeug.wrappers.CommonResponseDescriptorsMixin.location: TaintSource[URL] = ..
 # Sessions
 flask.globals.session: TaintSource[UserControlled] = ...
 
+# flask.Markup sources
+markupsafe.Markup.unescape(self) -> TaintSource[UserControlled]
+
 # Sinks
 def werkzeug.utils.redirect(location: TaintSink[Redirect], code, Response): ...
 def flask.helpers.send_file(
@@ -47,6 +50,14 @@ def flask.helpers.send_file(
     conditional,
     last_modified,
 ): ...
+
+# flask.Markup sinks
+def markupsafe.Markup.__init__(self: TaintSink[XSS]): ...
+
+# flask.Markup sanitizers
+@Sanitize(TaintSource[UserControlled])
+def markupsafe.Markup.escape(cls, s): ...
+
 # methods for constructing a response
 def werkzeug.wrappers.BaseResponse.__init__(
 	self,
