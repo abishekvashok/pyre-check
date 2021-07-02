@@ -44,12 +44,10 @@ jobs:
           cd ./source
           make
           cd ../
-          shopt -s expand_aliases
           echo "PYTHONPATH=$GITHUB_WORKSPACE:$PYTHONPATH" >> $GITHUB_ENV
           echo "pythonLocation=$GITHUB_WORKSPACE:$pythonLocation" >> $GITHUB_ENV
           echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
           echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/stubs/typeshed/typeshed-master/" >> $GITHUB_ENV
-          alias pyre='python -m client.pyre'
 
       - name: Run and test pysa output
         run: |
