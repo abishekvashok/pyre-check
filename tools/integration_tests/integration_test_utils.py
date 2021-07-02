@@ -93,7 +93,9 @@ def run_pysa_analysis(
     """
     LOG.info("Running `pyre analyze`")
     command = [
-        "pyre",
+        "python",
+        "-m"
+        "client.pyre",
         "--noninteractive",
         "analyze",
     ]
