@@ -5,7 +5,7 @@ inputs:
   build-type:
     description: Pysa build to use. Possible values are stable and nightly. Default is stable.
     required: false
-    default: "stable"
+    default: "stable"e
 runs:
   using: "composite"
   steps:
