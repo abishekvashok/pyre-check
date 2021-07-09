@@ -2,7 +2,7 @@ name: pysa
 
 on:
   push:
-    branches: [ master ]
+    branches: [ test-1, master ]
   pull_request:
     branches: [ master ]
 
