@@ -15,7 +15,7 @@ import libcst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
 
-from ..commands.command import Command, CommandArguments, ErrorSuppressingCommand
+from ..commands.command import CommandArguments, ErrorSuppressingCommand
 from ..configuration import Configuration
 from ..errors import PathsToErrors, PyreError, UserError
 from ..filesystem import path_exists

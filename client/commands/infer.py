@@ -16,14 +16,9 @@ import shutil
 import subprocess
 import sys
 from collections import defaultdict
-from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
-from typing import IO, List, Optional, Sequence, Set, Union
-
-import libcst
-from libcst.codemod import CodemodContext
-from libcst.codemod.visitors._apply_type_annotations import ApplyTypeAnnotationsVisitor
+from typing import List, Optional, Sequence, Set, Union
 from typing_extensions import Final
 
 from .. import command_arguments, log
