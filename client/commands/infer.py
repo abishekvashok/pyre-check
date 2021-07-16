@@ -19,6 +19,7 @@ from collections import defaultdict
 from logging import Logger
 from pathlib import Path
 from typing import List, Optional, Sequence, Set, Union
+
 from typing_extensions import Final
 
 from .. import command_arguments, log
