@@ -9,7 +9,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Sequence, Union, Optional
+from typing import Any, Dict, Sequence, Union, Optional, List
 
 import click
 
@@ -102,6 +102,28 @@ class Error:
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "PYRE-ERROR-" + str(self.code),
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(self.path),
+                        },
+                        "region": {
+                            "startLine": self.line + 1,
+                            "startColumn": self.column + 1,
+                            "endLine": self.stop_line + 1,
+                            "endColumn": self.stop_column + 1,
+                        },
+                    },
+                },
+            ],
+        }
+
 
 class LegacyError:
     error: Error
@@ -183,6 +205,9 @@ class LegacyError:
         column = click.style(str(self.error.column), fg="yellow")
         return f"{path}:{line}:{column} {self.error.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return self.error.to_sarif()
+
 
 @dataclasses.dataclass(frozen=True)
 class ModelVerificationError:
@@ -240,6 +265,76 @@ class ModelVerificationError:
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "PYRE-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-ERROR-MDL",
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(self.path),
+                        },
+                        "region": {
+                            "startLine": self.line + 1,
+                            "startColumn": self.column + 1,
+                            "endLine": self.stop_line + 1,
+                            "endColumn": self.stop_column + 1,
+                        },
+                    },
+                },
+            ],
+        }
+
+
+def errors_to_sarif(
+    errors: Union[
+        Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
+    ]
+) -> Dict[str, Any]:
+
+    results: List[Dict[str, Any]] = []
+    rules: List[Dict[str, Any]] = []
+    for error in errors:
+        results.append(error.to_sarif())
+        if type(error) is LegacyError:
+            error = error.error
+        if type(error) is ModelVerificationError:
+            name = "Model verification error"
+        else:
+            name = error.name
+        rules.append(
+            {
+                "id": "PYRE-ERROR-" + str(error.code)
+                if error.code is not None
+                else "PYRE-ERROR-MDL",
+                "name": name.title().replace(" ", ""),
+                "shortDescription": {"text": error.description},
+                "helpUri": "https://www.pyre-check.org",
+                "help": {"text": error.description},
+            }
+        )
+
+    return {
+        "version": "2.1.0",
+        "$schema": "http://json.schemastore.org/sarif-2.1.0-rtm.4.json",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "Pyre",
+                        "informationUri": "https://www.pyre-check.org",
+                        "rules": rules,
+                    }
+                },
+                "results": results,
+            }
+        ],
+    }
+
 
 def print_errors(
     errors: Union[
@@ -257,5 +352,7 @@ def print_errors(
 
     if output == command_arguments.TEXT:
         log.stdout.write("\n".join([error.to_text() for error in errors]))
+    elif output == command_arguments.SARIF:
+        log.stdout.write(json.dumps(errors_to_sarif(errors)))
     else:
         log.stdout.write(json.dumps([error.to_json() for error in errors]))
