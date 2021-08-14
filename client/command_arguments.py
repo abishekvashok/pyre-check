@@ -10,7 +10,7 @@ from typing import List, Optional, Set
 
 TEXT: str = "text"
 JSON: str = "json"
-
+SARIF: str = "sarif"
 
 @dataclass(frozen=True)
 class CommandArguments:

@@ -102,6 +102,28 @@ class Error:
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "type-error",
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": f"file://{Path.cwd() / self.path}",
+                        }
+                    },
+                    "region": {
+                        "startLine": self.line,
+                        "startColumn": self.column,
+                        "stopLine": self.stop_line,
+                        "stopColumn": self.stop_column,
+                    },
+                }
+            ],
+        }
+
 
 class LegacyError:
     error: Error
@@ -183,6 +205,9 @@ class LegacyError:
         column = click.style(str(self.error.column), fg="yellow")
         return f"{path}:{line}:{column} {self.error.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return self.error.to_sarif()
+
 
 @dataclasses.dataclass(frozen=True)
 class ModelVerificationError:
@@ -240,6 +265,68 @@ class ModelVerificationError:
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "model-verification-error",
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": f"file://{Path.cwd() / str(self.path)}",
+                        }
+                    },
+                    "region": {
+                        "startLine": self.line,
+                        "startColumn": self.column,
+                        "stopLine": self.stop_line,
+                        "stopColumn": self.stop_column,
+                    },
+                }
+            ],
+        }
+
+
+def errors_to_sarif(
+    errors: Union[
+        Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
+    ]
+) -> Dict[str, Any]:
+    return {
+        "version": "2.1.0",
+        "$schema": "http://json.schemastore.org/sarif-2.1.0-rtm.4.json",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "Pyre",
+                        "informationUri": "https://www.pyre-check.org",
+                        "rules": [
+                            {
+                                "id": "type-error",
+                                "shortDescription": {"text": "Type Error"},
+                                "helpUri": "https://www.pyre-check.org",
+                                "help": {"text": "Pyre is a type checker for Python"},
+                            },
+                            {
+                                "id": "model-verifcation-error",
+                                "shortDescription": {
+                                    "text": "Model verification error"
+                                },
+                                "helpUri": "https://www.pyre-check.org",
+                                "help": {
+                                    "text": "Pyre has found a model verifcation error"
+                                },
+                            },
+                        ],
+                    }
+                },
+                "results": [error.to_sarif() for error in errors],
+            }
+        ],
+    }
+
 
 def print_errors(
     errors: Union[
@@ -257,5 +344,7 @@ def print_errors(
 
     if output == command_arguments.TEXT:
         log.stdout.write("\n".join([error.to_text() for error in errors]))
+    elif output == command_arguments.SARIF:
+        log.stdout.write(json.dumps(errors_to_sarif(errors)))
     else:
         log.stdout.write(json.dumps([error.to_json() for error in errors]))
