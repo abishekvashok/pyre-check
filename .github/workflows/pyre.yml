@@ -1,12 +1,6 @@
 name: pyre
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   pyre:
@@ -14,31 +8,40 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install cython
-          python -m pip install flask flask_cors graphql-core typing_inspect
-          VERSION=$(grep "version" .pyre_configuration | sed -n -e 's/.*\(0\.0\.[0-9]*\).*/\1/p')
-          python -m pip install pyre-check-nightly==$VERSION
+          pip install -r requirements.txt
+          sudo apt-get install ocaml ocaml-dune
 
-      - name: Run Pyre
-        continue-on-error: true
-        run: |
-          pyre --output=json check > errors.json
-
-      - name: Expose Pyre Results
-        uses: actions/upload-artifact@v2
+      - name: Setup OCaml
+        uses: avsm/setup-ocaml@v2
         with:
-          name: Pyre Results
-          path: errors.json
+          ocaml-compiler: 4.10.2
 
-      - name: Convert to SARIF
+      - name: Setup opam switch
         run: |
-          cat errors.json | ./scripts/convert_results_to_sarif.py > sarif.json
+          opam switch create 4.10.2
+          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.10.2" >> $GITHUB_ENV
+          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.10.2/lib/stublibs:$HOME/.opam/4.10.2/lib/ocaml/stublibs:$HOME/.opam/4.10.2/lib/ocam" >> $GITHUB_ENV
+          echo "$HOME/.opam/4.10.2/bin" >> $GITHUB_PATH
+          echo "/home/opam/.opam/4.10.2/bin" >> $GITHUB_PATH
+
+      - name: Build Pyre-check
+        run: |
+          mkdir typeshed
+          unzip -qq ./stubs/typeshed/typeshed.zip -d ./typeshed/
+          ./scripts/setup.sh --local --no-tests
+          make -C source
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$PYTHONPATH" >> $GITHUB_ENV
+          echo "pythonLocation=$GITHUB_WORKSPACE:$pythonLocation" >> $GITHUB_ENV
+          echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
+          echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/typeshed/typeshed-master/" >> $GITHUB_ENV
+
+      - name: Running Pyre-check
+        run: |
+          python3 -m client.pyre --output=sarif check > sarif.json
 
       - name: Expose SARIF Results
         uses: actions/upload-artifact@v2
@@ -53,4 +56,4 @@ jobs:
 
       - name: Fail Command On Errors
         run: |
-          if [ "$(cat errors.json)" != "[]" ]; then exit 1; fi
+          if [ "$(cat sarif.json | grep 'ruleId')" != "" ]; then exit 1; fi
