@@ -336,7 +336,7 @@ def print_errors(
     ],
     output: str,
     error_kind: str = "type",
-) -> None:
+):
     length = len(errors)
     if length != 0:
         suffix = "s" if length > 1 else ""
