@@ -12,6 +12,7 @@ TEXT: str = "text"
 JSON: str = "json"
 SARIF: str = "sarif"
 
+
 @dataclass(frozen=True)
 class CommandArguments:
     local_configuration: Optional[str] = None
