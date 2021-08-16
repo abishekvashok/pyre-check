@@ -292,7 +292,7 @@ def errors_to_sarif(
     errors: Union[
         Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
     ]
-) -> Dict[str, Any]:
+):
     return {
         "version": "2.1.0",
         "$schema": "http://json.schemastore.org/sarif-2.1.0-rtm.4.json",
