@@ -76,13 +76,13 @@ module JsonAst = struct
       line: int;
       column: int;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
 
     and t = {
       start: position;
       stop: position;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
 
     let null_position = { line = -1; column = -1 }
 
@@ -90,6 +90,12 @@ module JsonAst = struct
 
     let pp_start formatter { start = { line; column }; _ } =
       Format.fprintf formatter "%d:%d" line column
+
+
+    let position_to_string { line; column } = Format.sprintf "line `%d` column `%d`" line column
+
+    let to_string { start; stop } =
+      Format.sprintf "from %s to %s" (position_to_string start) (position_to_string stop)
 
 
     let from_decoded_range range =
@@ -100,12 +106,28 @@ module JsonAst = struct
       }
   end
 
+  module LocationWithPath = struct
+    type t = {
+      location: Location.t;
+      path: PyrePath.t;
+    }
+    [@@deriving equal, show, compare]
+
+    let create ~location ~path = { location; path }
+
+    let optional_to_string optional_location_with_path =
+      match optional_location_with_path with
+      | Some { path; location } ->
+          Format.asprintf "`%s` %s" (PyrePath.show path) (Location.to_string location)
+      | None -> "unknown or internal location"
+  end
+
   module Node = struct
     type 'a t = {
       location: Location.t;
       value: 'a;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
   end
 
   exception
@@ -132,7 +154,7 @@ module JsonAst = struct
       | `Assoc of (string * t) list
       ]
 
-    and t = expression Node.t [@@deriving equal, show]
+    and t = expression Node.t [@@deriving equal, show, compare]
 
     exception
       TypeError of {
@@ -271,6 +293,12 @@ module JsonAst = struct
         match node.Node.value with
         | `List l -> l
         | _ -> raise (type_error "list" node)
+
+
+      let to_location_exn node =
+        match node.Node.value with
+        | `Null -> raise (type_error "non-null" node)
+        | _ -> node.Node.location
     end
   end
 end

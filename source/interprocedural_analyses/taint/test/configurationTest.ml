@@ -357,6 +357,15 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          location_with_path = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 12; column = 20 };
+                    stop = { line = 12; column = 23 };
+                  };
+              };
           name = "test combined rule";
         };
         {
@@ -365,6 +374,15 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          location_with_path = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 12; column = 20 };
+                    stop = { line = 12; column = 23 };
+                  };
+              };
           name = "test combined rule";
         };
       ];
@@ -408,6 +426,15 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          location_with_path = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 13; column = 20 };
+                    stop = { line = 13; column = 23 };
+                  };
+              };
           name = "test combined rule";
         };
         {
@@ -416,6 +443,15 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          location_with_path = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 13; column = 20 };
+                    stop = { line = 13; column = 23 };
+                  };
+              };
           name = "test combined rule";
         };
       ];
@@ -542,6 +578,15 @@ let test_string_combine_rules _ =
           transforms = [];
           code = 2001;
           message_format = "rule message";
+          location_with_path = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 14; column = 20 };
+                    stop = { line = 14; column = 23 };
+                  };
+              };
           name = "rule name";
         };
         {
@@ -551,7 +596,15 @@ let test_string_combine_rules _ =
           transforms = [];
           code = 2001;
           message_format = "rule message";
-          name = "rule name";
+          location_with_path = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 14; column = 20 };
+                    stop = { line = 14; column = 23 };
+                  };
+              };          name = "rule name";
         };
       ];
   assert_equal
@@ -822,7 +875,22 @@ let test_validate _ =
     }
     |};
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.RuleCodeDuplicate 2001]
+    ~errors:
+      [
+        TaintConfiguration.Error.RuleCodeDuplicate
+          {
+            code = 2001;
+            previous_location = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 22; column = 20 };
+                    stop = { line = 22; column = 23 };
+                  };
+              };
+          };
+      ]
     {|
     {
       "sources": [
@@ -851,7 +919,21 @@ let test_validate _ =
     }
     |};
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.RuleCodeDuplicate 2002]
+    ~errors:[
+        TaintConfiguration.Error.RuleCodeDuplicate
+          {
+            code = 2002;
+            previous_location = Some
+              {
+                JsonParsing.JsonAst.LocationWithPath.path = PyrePath.create_absolute "/taint.config";
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 16; column = 20 };
+                    stop = { line = 16; column = 23 };
+                  };
+              };
+          };
+      ]
     {|
     {
       "sources": [
@@ -875,7 +957,7 @@ let test_validate _ =
         {
            "name": "test combined rule",
            "sources": {"a": "A", "b": "B"},
-           "sinks": ["C"],
+           "partial_sink": "D",
            "code": 2002,
            "message_format": "some form"
         }

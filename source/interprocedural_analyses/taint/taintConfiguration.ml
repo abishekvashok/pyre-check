@@ -520,6 +520,7 @@ module Heap = struct
           name = "Possible shell injection.";
           message_format =
             "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"];
@@ -528,6 +529,7 @@ module Heap = struct
           code = 5002;
           name = "Test flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -536,6 +538,7 @@ module Heap = struct
           code = 5005;
           name = "User controlled data to SQL execution.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources =
@@ -547,6 +550,7 @@ module Heap = struct
           code = 5006;
           name = "Restricted data being logged.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -555,6 +559,7 @@ module Heap = struct
           code = 5007;
           name = "User data to XML Parser.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -563,6 +568,7 @@ module Heap = struct
           code = 5008;
           name = "XSS";
           message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "Demo"];
@@ -571,6 +577,7 @@ module Heap = struct
           code = 5009;
           name = "Demo flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -579,6 +586,7 @@ module Heap = struct
           code = 5010;
           name = "User data to getattr.";
           message_format = "Attacker may control at least one argument to getattr(,).";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "Test"];
@@ -588,6 +596,7 @@ module Heap = struct
           name = "Flow with one transform.";
           message_format =
             "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "Test"];
@@ -597,6 +606,7 @@ module Heap = struct
           name = "Flow with two transforms.";
           message_format =
             "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+          location_with_path = None;
         };
         {
           sources = [Sources.NamedSource "Demo"];
@@ -606,6 +616,7 @@ module Heap = struct
           name = "Duplicate demo flow.";
           message_format =
             "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          location_with_path = None;
         };
       ]
     in
@@ -717,20 +728,23 @@ module Error = struct
         labels: string list;
       }
     | InvalidMultiSink of string
-    | RuleCodeDuplicate of int
+    | RuleCodeDuplicate of {
+        code: int;
+        previous_location: JsonAst.LocationWithPath.t option;
+      }
     | OptionDuplicate of string
     | SourceDuplicate of string
     | SinkDuplicate of string
     | TransformDuplicate of string
     | FeatureDuplicate of string
-  [@@deriving equal]
+  [@@deriving equal, compare]
 
   type t = {
     kind: kind;
     path: PyrePath.t option;
     location: JsonAst.Location.t option;
   }
-  [@@deriving equal]
+  [@@deriving equal, compare]
 
   let create_with_location ~path ~kind ~location =
     { kind; path = Some path; location = Some location }
@@ -780,8 +794,12 @@ module Error = struct
           sink
           (String.concat labels ~sep:", ")
     | InvalidMultiSink sink -> Format.fprintf formatter "`%s` is not a multi sink" sink
-    | RuleCodeDuplicate code ->
-        Format.fprintf formatter "Multiple rules share the same code `%d`" code
+    | RuleCodeDuplicate { code; previous_location } ->
+        Format.fprintf
+          formatter
+          "Multiple rules share the same code `%d`. Previously seen in %s."
+          code
+          (JsonAst.LocationWithPath.optional_to_string previous_location)
     | OptionDuplicate name ->
         Format.fprintf formatter "Multiple values were passed in for option `%s`" name
     | SourceDuplicate name -> Format.fprintf formatter "Duplicate entry for source: `%s`" name
@@ -876,9 +894,12 @@ let from_json_list source_json_list =
     json_exception_to_error ~path ~section:key (fun () ->
         JsonAst.Json.Util.member_exn key value |> JsonAst.Json.Util.to_string_exn |> Result.return)
   in
-  let json_integer_member ~path key value =
+  let json_integer_member_with_location ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
-        JsonAst.Json.Util.member_exn key value |> JsonAst.Json.Util.to_int_exn |> Result.return)
+        let node = JsonAst.Json.Util.member_exn key value in
+        let value = JsonAst.Json.Util.to_int_exn node in
+        let location = JsonAst.Json.Util.to_location_exn node in
+        Result.return (value, location))
   in
   let array_member ~path ?section name json =
     let node = JsonAst.Json.Util.member name json in
@@ -976,14 +997,6 @@ let from_json_list source_json_list =
     |> Result.combine_errors
     |> Result.map_error ~f:List.concat
   in
-  let seen_rules = Int.Hash_set.create () in
-  let validate_code_uniqueness ~path code =
-    if Hash_set.mem seen_rules code then
-      Result.Error [Error.create ~path ~kind:(Error.RuleCodeDuplicate code)]
-    else (
-      Hash_set.add seen_rules code;
-      Result.Ok ())
-  in
   let parse_source_reference ~path ~allowed_sources source =
     AnnotationParser.parse_source ~allowed:allowed_sources source
     |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSource source))
@@ -1003,6 +1016,7 @@ let from_json_list source_json_list =
       name: string;
       message_format: string;
       code: int;
+      location_with_path: JsonAst.LocationWithPath.t;
     }
 
     let parse ~path json =
@@ -1010,9 +1024,15 @@ let from_json_list source_json_list =
       >>= fun name ->
       json_string_member ~path "message_format" json
       >>= fun message_format ->
-      json_integer_member ~path "code" json
-      >>= fun code ->
-      validate_code_uniqueness ~path code >>= fun () -> Result.Ok { name; message_format; code }
+      json_integer_member_with_location ~path "code" json
+      >>= fun (code, location) ->
+      Result.Ok
+        {
+          name;
+          message_format;
+          code;
+          location_with_path = JsonAst.LocationWithPath.create ~path ~location;
+        }
   end
   in
   let parse_rules ~allowed_sources ~allowed_sinks ~allowed_transforms (path, json) =
@@ -1046,8 +1066,17 @@ let from_json_list source_json_list =
       |> Result.combine_errors
       >>= fun transforms ->
       RuleCommonAttributes.parse ~path json
-      >>= fun { name; message_format; code } ->
-      Result.Ok { Rule.sources; sinks; transforms; name; code; message_format }
+      >>= fun { name; message_format; code; location_with_path } ->
+      Result.Ok
+        {
+          Rule.sources;
+          sinks;
+          transforms;
+          name;
+          code;
+          message_format;
+          location_with_path = Some location_with_path;
+        }
     in
     array_member ~path "rules" json
     >>= fun rules ->
@@ -1125,7 +1154,8 @@ let from_json_list source_json_list =
       ~partial_sink
       ~partial_sink_converter
       ~partial_sink_labels
-      ~rule_common_attributues:{ RuleCommonAttributes.name; message_format; code }
+      ~rule_common_attributues:
+        { RuleCommonAttributes.name; message_format; code; location_with_path }
       ~combined_source_rule_sources:
         { CombinedSourceRuleSources.main_sources; secondary_sources; main_label; secondary_label }
       ~path
@@ -1172,6 +1202,7 @@ let from_json_list source_json_list =
         name;
         code;
         message_format;
+        location_with_path = Some location_with_path;
       }
     in
     let secondary_rule =
@@ -1182,6 +1213,7 @@ let from_json_list source_json_list =
         name;
         code;
         message_format;
+        location_with_path = Some location_with_path;
       }
     in
     let partial_sink_converter =
@@ -1502,7 +1534,7 @@ let from_json_list source_json_list =
 
 
 (** Perform additional checks on the taint configuration. *)
-let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration) =
+let validate ({ Heap.sources; sinks; transforms; features; rules; _ } as configuration) =
   let ensure_list_unique ~get_name ~get_error elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
@@ -1516,6 +1548,57 @@ let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration)
     List.map elements ~f:ensure_unique
     |> Result.combine_errors_unit
     |> Result.map_error ~f:List.concat
+  in
+  let ensure_list_unique_with_location ~get_key ~get_error ~get_location_with_path elements =
+    let module HashTableEntry = struct
+      type t =
+        | InternalLocation
+        | LocationWithPath of JsonAst.LocationWithPath.t
+      [@@deriving equal]
+
+      let create location_with_path =
+        match location_with_path with
+        | Some location_with_path -> LocationWithPath location_with_path
+        | None -> InternalLocation
+    end
+    in
+    let table = Hashtbl.create (module String) in
+    let ensure_unique element =
+      let key = get_key element in
+      let location_with_path = get_location_with_path element in
+      let entry = HashTableEntry.create location_with_path in
+      match Hashtbl.find table key with
+      | None ->
+          let _ = Hashtbl.add table ~key ~data:entry in
+          Result.Ok ()
+      | Some previous_entry -> (
+          if
+            (* Some generated rules can have the same code, compare the base defintions. *)
+            HashTableEntry.equal previous_entry entry
+          then
+            Result.Ok ()
+          else
+            let previous_location_with_path =
+              match previous_entry with
+              | HashTableEntry.LocationWithPath location_with_path -> Some location_with_path
+              | HashTableEntry.InternalLocation -> None
+            in
+            let error_kind = get_error element previous_location_with_path in
+            match location_with_path with
+            | Some location_with_path ->
+                Result.Error
+                  [
+                    Error.create_with_location
+                      ~path:location_with_path.JsonAst.LocationWithPath.path
+                      ~location:location_with_path.JsonAst.LocationWithPath.location
+                      ~kind:error_kind;
+                  ]
+            | None -> Result.Error [{ Error.path = None; location = None; kind = error_kind }])
+    in
+    List.map elements ~f:ensure_unique
+    |> Result.combine_errors_unit
+    |> Result.map_error ~f:List.concat
+    |> Result.map_error ~f:(List.dedup_and_sort ~compare:Error.compare)
   in
   Result.combine_errors_unit
     [
@@ -1535,6 +1618,12 @@ let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration)
         ~get_name:Fn.id
         ~get_error:(fun name -> Error.FeatureDuplicate name)
         features;
+      ensure_list_unique_with_location
+        ~get_key:(fun { Rule.code; _ } -> string_of_int code)
+        ~get_location_with_path:(fun { Rule.location_with_path; _ } -> location_with_path)
+        ~get_error:(fun { Rule.code; _ } previous_location ->
+          Error.RuleCodeDuplicate { code; previous_location })
+        rules;
     ]
   |> Result.map_error ~f:List.concat
   |> Result.map ~f:(fun () -> configuration)
@@ -1560,6 +1649,7 @@ let obscure_flows_configuration configuration =
         code = 9001;
         name = "Obscure flow.";
         message_format = "Data from [{$sources}] source(s) may reach an obscure model";
+        location_with_path = None;
       };
     ]
   in
@@ -1590,6 +1680,7 @@ let missing_type_flows_configuration configuration =
         code = 9002;
         name = "Unknown callee flow.";
         message_format = "Data from [{$sources}] source(s) may flow to an unknown callee";
+        location_with_path = None;
       };
     ]
   in
