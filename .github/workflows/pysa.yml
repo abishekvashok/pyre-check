@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
 
       - name: Install Dependencies
@@ -29,10 +29,6 @@ jobs:
       - name: Setup opam switch
         run: |
           opam switch create 4.14.0
-          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.14.0" >> $GITHUB_ENV
-          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.14.0/lib/stublibs:$HOME/.opam/4.14.0/lib/ocaml/stublibs:$HOME/.opam/4.14.0/lib/ocam" >> $GITHUB_ENV
-          echo "$HOME/.opam/4.14.0/bin" >> $GITHUB_PATH
-          echo "/home/opam/.opam/4.14.0/bin" >> $GITHUB_PATH
 
       - name: Build Pyre (and Pysa)
         run: |
